@@ -1,13 +1,29 @@
 import math
+import pandas as pd
 
-from pypws.entities import Weather, Substrate, Bund
+from pypws.entities import Weather, Substrate, Bund, Material, MaterialComponent
 from pypws.enums import AtmosphericStabilityClass, WindProfileFlag
 from pypws.materials import get_component_by_id
 
+from data.tables import Tables
+
 def material(inputs):
   chems = inputs.chem_mix
+  molfs = inputs.molar_composition
+  cheminfo = pd.read_csv(Tables().cheminfo)
+  mat = Material(name = 'Release Components', components=[])
+  for i in range(len(chems)):
+    mc:MaterialComponent
+    cas_no = chems[i]
+    molf = molfs[i]
+    row = cheminfo[cheminfo[cas_no] == cas_no]
+    id = row['id'].values[0]
+    comp = get_component_by_id(id=id)
+    comp.mole_fraction = molf
+    mat.components.append(comp)
+  mat.component_count = len(mat.components)
 
-
+  return material
 
 def weather():
   wx = Weather()
@@ -39,3 +55,16 @@ def substrate(inputs):
   return substrate
 
 
+class Inputs:
+  def __init__(self):
+    pass
+
+def main():
+  inputs = Inputs()
+  inputs.chem_mix = ['50-00-0']
+  inputs.molar_composition = [1]
+  mat = material(inputs=inputs)
+  apple = 1
+
+if '__name__' == '__main__':
+  main()

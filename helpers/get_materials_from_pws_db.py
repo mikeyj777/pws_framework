@@ -33,16 +33,14 @@ def get_erpg_and_lel_data():
   cheminfo = pd.read_csv('data/cheminfo.csv')
   merged = pd.merge(cheminfo, chems_db, on="cas_no")
   merged.to_csv('cheminfo_with_tox_and_flam.csv')
-  apple = 1
 
 def main():
   # cas_ids = get_all_cas_ids()
   # mat_ids = get_materials_from_cas_ids(cas_ids)
   # chem_names = get_chem_names(mat_ids)
   # export_csv(cas_ids, chem_names)
-  get_erpg_and_lel_data()
-
-  apple = 1
+  # get_erpg_and_lel_data()
+  pass
 
 if __name__ == '__main__':
   main()
