@@ -5,7 +5,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pypws.materials import get_dnv_components
+from pypws.materials import get_dnv_components, get_component_by_id
+from pypws.entities import Material, MaterialComponent
 
 def get_pws_materials():
   mats = get_dnv_components()
@@ -34,13 +35,31 @@ def get_erpg_and_lel_data():
   merged = pd.merge(cheminfo, chems_db, on="cas_no")
   merged.to_csv('cheminfo_with_tox_and_flam.csv')
 
+def get_vp_data(mats):
+  vps = []
+  for mc in mats:
+    vps_found = False
+    comp = get_component_by_id(str(mc.id))
+    for di in comp.data_item:
+      if di.description == "vapourPressure":
+        vps_found = True
+        vps.append({
+          "cas_id": mc.cas_id,
+          "vp_consts": di.equation_coefficients,
+          "calculation_limits": di.calculation_limits,
+          "equation_number": di.equation_number,
+          "equation_string": di.equation_string
+        })
+    if not vps_found:
+      print(f"vps not available for {mc.display_name} | cas id: {mc.cas_id}")
+  return vps
+
 def main():
-  # cas_ids = get_all_cas_ids()
-  # mat_ids = get_materials_from_cas_ids(cas_ids)
-  # chem_names = get_chem_names(mat_ids)
-  # export_csv(cas_ids, chem_names)
-  # get_erpg_and_lel_data()
-  pass
+  mats = get_pws_materials()
+  vps = get_vp_data(mats)
+  vps_df = pd.DataFrame(vps)
+  vps_df.to_csv("vp_data.csv")
+  apple = 1
 
 if __name__ == '__main__':
   main()

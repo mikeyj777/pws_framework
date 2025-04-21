@@ -1,3 +1,5 @@
+from pypws.enums import ResultCode
+
 from entities.inputs import Inputs
 from entities.vessel_leak import vessel_and_leak
 from calculations.discharge import Discharge
@@ -15,7 +17,9 @@ class Main:
     vessel, leak = vessel_and_leak(inputs=self.inputs)
     self.discharge_calc = Discharge(inputs=self.inputs, vessel=vessel, leak=leak)
     self.discharge_calc.run()
-
+    if not hasattr(self.discharge_calc.vlc, "discharge_records") or len(self.discharge_calc.vlc.discharge_records) == 0:
+      return ResultCode.NO_DISCHARGE_RECORDS_ERROR
+    
     # dispersion
     apple = 1
 
