@@ -35,7 +35,7 @@ def state(inputs):
 
 
 def get_flash_result(inputs):
-  flash = FlashCalculation(material=material, material_state=state)
+  flash = FlashCalculation(material=inputs.material, material_state=inputs.state)
   if flash.run() != ResultCode.SUCCESS:
     inputs.log_handler(f'\n\n\n***\n\n\nFlash Calculation did not complete.  Messages:\n\n\n{flash.messages}')
     raise Exception(Exceptions.flash_calc_failed)
@@ -70,17 +70,3 @@ def substrate(inputs):
   substrate = Substrate(bund=bund)
 
   return substrate
-
-
-# class Inputs:
-#   def __init__(self):
-#     pass
-
-def main():
-  inputs = Inputs()
-  inputs.chem_mix = ['50-00-0']
-  inputs.molar_composition = [1]
-  mat = material(inputs=inputs)
-
-if __name__ == '__main__':
-  main()

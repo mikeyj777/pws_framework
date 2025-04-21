@@ -3,11 +3,13 @@ import sys
 import math
 
 from pypws.calculations import VesselStateCalculation, State
-from pypws.entities import Leak, Vessel, VesselShape, VesselConditions
+from pypws.entities import Leak, Vessel, VesselShape, VesselConditions, LocalPosition
 from pypws.enums import ResultCode
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.exceptions import Exceptions
+from interface import Interface
+from entities.inputs import Inputs
 
 def vessel(inputs):
   material = inputs.material
@@ -19,12 +21,31 @@ def vessel(inputs):
   state = vessel_state_calc.output_state
   
   ll = get_liquid_level(results=inputs.flash_result)
+  ll = min(ll, 0.99)
+  ll = max(0, ll)
   vol = inputs.volume_m3
   l_by_d = 1
-  d = math.sqrt(4*vol / math.pi / l_by_d) ^ (1/3)
+  d = (4*vol / math.pi / l_by_d) ** (1/3)
   l = d * l_by_d
 
-  vessel = Vessel(state=vessel_state_calc.output_state, shape=VesselShape.VERTICAL_CYLINDER, vessel_conditions=vessel_state_calc.vessel_conditions, liquid_fill_fraction_by_volume=ll)
+  leak_height_above_btm_of_tank = ll * l
+  elev_m = inputs.elevation_m
+  # set elevation of bottom of tank such that the hole size is at the stated elevation from the inputs
+  z = elev_m - leak_height_above_btm_of_tank
+  tank_position = LocalPosition(z = z)
+
+  vessel = Vessel(
+    state = state,
+    material = material, 
+    location = tank_position,
+    diameter = d,
+    height = l,
+    shape = VesselShape.VERTICAL_CYLINDER,
+    vessel_conditions = vessel_state_calc.vessel_conditions,
+    liquid_fill_fraction_by_volume = ll
+  )
+
+  apple = 1
 
 def get_liquid_level(results):
   
@@ -46,19 +67,11 @@ def get_liquid_level(results):
   return ll
 
 
-class Inputs:
-  def __init__(self):
-    pass
-
 def main():
+  interface = Interface()
+  interface.set_inputs(temp_k=250.15)
   inputs = Inputs()
-  inputs.chem_mix = ['50-00-0']
-  inputs.molar_composition = [1]
-  inputs.temp_k = 298.15
-  inputs.press_pa = 101325
-  from entities.prep import material
-  inputs.material = material(inputs=inputs)
-  inputs.state = State(pressure=inputs.press_pa, temperature= inputs.temp_k, liquid_fraction=None)
+  inputs.set_values(inputs_dict=interface.inputs_dict)
   vessel(inputs=inputs)
 
 
