@@ -1,10 +1,14 @@
+import os
+import sys
 import math
 import pandas as pd
 
-from pypws.entities import Weather, Substrate, Bund, Material, MaterialComponent
-from pypws.enums import AtmosphericStabilityClass, WindProfileFlag
+from pypws.entities import Weather, Substrate, Bund, Material, MaterialComponent, FlashResult, State
+from pypws.enums import AtmosphericStabilityClass, WindProfileFlag, ResultCode
 from pypws.materials import get_component_by_id
+from pypws.calculations import FlashCalculation
 
+from data.exceptions import Exceptions
 from data.tables import Tables
 
 def material(inputs):
@@ -16,14 +20,27 @@ def material(inputs):
     mc:MaterialComponent
     cas_no = chems[i]
     molf = molfs[i]
-    row = cheminfo[cheminfo[cas_no] == cas_no]
+    row = cheminfo[cheminfo['cas_no'] == cas_no]
     id = row['id'].values[0]
     comp = get_component_by_id(id=id)
     comp.mole_fraction = molf
     mat.components.append(comp)
   mat.component_count = len(mat.components)
 
-  return material
+  return mat
+
+def state(inputs):
+  state = State(pressure=inputs.press_pa, temperature=inputs.temp_k, liquid_fraction=None)
+  return state
+
+
+def get_flash_result(inputs):
+  flash = FlashCalculation(material=material, material_state=state)
+  if flash.run() != ResultCode.SUCCESS:
+    inputs.log_handler(f'\n\n\n***\n\n\nFlash Calculation did not complete.  Messages:\n\n\n{flash.messages}')
+    raise Exception(Exceptions.flash_calc_failed)
+  results:FlashResult = flash.flash_result
+  return results
 
 def weather():
   wx = Weather()
@@ -55,16 +72,15 @@ def substrate(inputs):
   return substrate
 
 
-class Inputs:
-  def __init__(self):
-    pass
+# class Inputs:
+#   def __init__(self):
+#     pass
 
 def main():
   inputs = Inputs()
   inputs.chem_mix = ['50-00-0']
   inputs.molar_composition = [1]
   mat = material(inputs=inputs)
-  apple = 1
 
-if '__name__' == '__main__':
+if __name__ == '__main__':
   main()
