@@ -8,8 +8,6 @@ from pypws.enums import ResultCode
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.exceptions import Exceptions
-from interface import Interface
-from entities.inputs import Inputs
 
 def vessel_and_leak(inputs):
   material = inputs.material
@@ -42,7 +40,7 @@ def vessel_and_leak(inputs):
     height = l,
     shape = VesselShape.VERTICAL_CYLINDER,
     vessel_conditions = vessel_state_calc.vessel_conditions,
-    liquid_fill_fraction_by_volume = ll
+    liquid_fill_fraction_by_volume = hole_height_fraction
   )
 
   leak = Leak(hole_diameter=inputs.hole_size_m, release_angle=inputs.release_angle_rad, hole_height_fraction = hole_height_fraction, release_elevation=elev_m)
@@ -70,6 +68,8 @@ def get_liquid_level(results):
 
 
 def main():
+  from interface import Interface
+  from entities.inputs import Inputs
   interface = Interface()
   interface.set_inputs(temp_k=250.15)
   inputs = Inputs()

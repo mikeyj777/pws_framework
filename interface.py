@@ -1,4 +1,8 @@
+from pypws.enums import ResultCode
+
 from modeling.main import Main
+from data.exceptions import Exceptions
+
 
 class Interface:
   def __init__(self):
@@ -19,6 +23,16 @@ class Interface:
     self.inputs_dict['log_handler'] = log_handler
 
 
-  def run():
+  def run(self):
     
     main = Main()
+    if main.run(app_inputs=self.inputs_dict) != ResultCode.SUCCESS:
+      raise Exception(Exceptions.unspecified_error)
+    
+def main():
+  interface = Interface()
+  interface.set_inputs(temp_k=250.15)
+  res = interface.run()
+
+if __name__ == '__main__':
+  main()

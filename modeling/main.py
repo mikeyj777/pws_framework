@@ -1,22 +1,23 @@
 from entities.inputs import Inputs
+from entities.vessel_leak import vessel_and_leak
+from calculations.discharge import Discharge
 
 class Main:
   def __init__(self):
-    pass
+    self.inputs = None
+
   def run(self, app_inputs):
-    pass
-    
-    # set inputs for model
+# set inputs for model.  Also gets materials and state, stored as properties of "inputs"
     self.inputs = Inputs()
-    self.inputs.set_values(inputs=app_inputs)
-
-    # get materials
-
-    # get state
+    self.inputs.set_values(inputs_dict=app_inputs)
 
     # vessel state calc
+    vessel, leak = vessel_and_leak(inputs=self.inputs)
+    self.discharge_calc = Discharge(inputs=self.inputs, vessel=vessel, leak=leak)
+    self.discharge_calc.run()
 
     # dispersion
+    apple = 1
 
     # post-processing
 
