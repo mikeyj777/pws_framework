@@ -3,6 +3,7 @@ from pypws.enums import ResultCode
 from entities.inputs import Inputs
 from entities.vessel_leak import vessel_and_leak
 from calculations.discharge import Discharge
+from calculations.thermo import get_vapor_phase_composition
 
 class Main:
   def __init__(self):
@@ -19,7 +20,7 @@ class Main:
     self.discharge_calc.run()
     if not hasattr(self.discharge_calc.vlc, "discharge_records") or len(self.discharge_calc.vlc.discharge_records) == 0:
       return ResultCode.NO_DISCHARGE_RECORDS_ERROR
-    
+    vps = get_vapor_phase_composition(self.discharge_calc)
     # dispersion
     apple = 1
 
