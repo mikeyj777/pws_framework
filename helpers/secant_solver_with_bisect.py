@@ -16,7 +16,7 @@ class Solver:
         result = self.solve_secant()
         if result is None:
             result = self.solve_bisect()
-            solved = result is not None
+        solved = result is not None
         self.answer = result
         return solved
         

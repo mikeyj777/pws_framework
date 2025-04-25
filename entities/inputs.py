@@ -1,3 +1,5 @@
+import numpy as np
+
 from data.exceptions import Exceptions
 from entities.prep import material, state, get_flash_result
 
@@ -11,8 +13,15 @@ class Inputs:
   def set_values(self, inputs_dict):
     for k, v in inputs_dict.items():
       setattr(self, k, v)
+    self.clean_inputs()
     self.get_properties()
 
+  def clean_inputs(self):
+    molar_composition = np.array(self.molar_composition)
+    if molar_composition.sum() !=0:
+      molar_composition /= molar_composition.sum()
+    self.molar_composition = molar_composition.tolist()
+    
   def get_properties(self):
     self.material = material(self)
     self.state = state(self)

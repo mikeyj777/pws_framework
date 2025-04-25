@@ -31,8 +31,14 @@ class Interface:
     
 def main():
   interface = Interface()
-  interface.set_inputs(temp_k=250.15)
+  interface.set_inputs(
+    press_pa=(0.01+14.6959)/14.6959 * 101325,
+    temp_k=73.15 + 273.15,
+    chem_mix=['121-44-8', '67-56-1'],
+    molar_composition=[0.5, 0.5],
+  )
   res = interface.run()
+  apple = 1
 
 if __name__ == '__main__':
   main()

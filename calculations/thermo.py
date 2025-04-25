@@ -10,9 +10,17 @@ def get_vapor_phase_composition(discharge):
   fin_state = vlc.discharge_records[0].final_state
 
   lf = fin_state.liquid_fraction
+
+  # debug xxx apple
+  lf = 0.3
+
   if lf == 0:
     return discharge.inputs.molar_composition
   temp_k = fin_state.temperature
+
+  # debug xxx apple
+  temp_k = 74+273.15
+
   vps = get_vapor_pressures_pa(inputs=discharge.inputs, temp_k=temp_k)
   ks = []
   k_times_zi = []
@@ -41,11 +49,6 @@ def get_vapor_phase_composition(discharge):
   if abs(rr_sum_vf_1) < 1e-6 or (rr_sum_vf_0 > 0 and rr_sum_vf_1 > 0):
     # saturated or superheated vapor.  use vapor pressure for vapor phase
     return discharge.inputs.molar_composition
-  
-  args = {
-    'molfs': discharge.inputs.molar_composition,
-    'ks': ks
-  }
 
   solver = Solver(
     f=get_rachford_rice_sum,
@@ -69,7 +72,7 @@ def get_vapor_phase_composition(discharge):
   ys = xs * ks
   if ys.sum() != 0:
     ys /= ys.sum()
-  return ys
+  return ys.tolist()
 
 def get_rachford_rice_sum(vap_fract, args):
   molfs = args['molfs']
@@ -77,6 +80,7 @@ def get_rachford_rice_sum(vap_fract, args):
   sum = 0
   for i in range(len(molfs)):
     sum += rachford_rice_eqn(vap_fract, molfs[i], ks[i])
+  return sum
 
 def rachford_rice_eqn(vf, molf, k):
   return (molf * (k - 1)) / (1 + vf * (k - 1))
@@ -97,5 +101,5 @@ def get_vapor_pressures_pa(inputs, temp_k):
         #   "equation_string": di.equation_string
         # })
         vp_pa = dippr_eqn_101(di.equation_coefficients, temp_k)
-        vps.append(molf * vp_pa)
+        vps.append(vp_pa)
   return vps
