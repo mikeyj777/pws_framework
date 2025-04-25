@@ -3,6 +3,7 @@ import numpy as np
 from pypws.entities import MaterialComponent, Material
 
 from calculations.dippr_eqns import dippr_eqn_101
+from helpers.secant_solver_with_bisect import Solver
 
 def get_vapor_phase_composition(discharge):
   vlc = discharge.vlc
@@ -33,16 +34,43 @@ def get_vapor_phase_composition(discharge):
   if abs(rr_sum_vf_0) < 1e-6 or (rr_sum_vf_0 < 0 and rr_sum_vf_1 < 0):
     # saturated or subcooled liquid.  use vapor pressure for vapor phase
     ys = np.array(k_times_zi)
-    ys /= ys.sum()
+    if ys.sum() != 0:
+      ys /= ys.sum()
     return ys
 
   if abs(rr_sum_vf_1) < 1e-6 or (rr_sum_vf_0 > 0 and rr_sum_vf_1 > 0):
     # saturated or superheated vapor.  use vapor pressure for vapor phase
     return discharge.inputs.molar_composition
   
+  args = {
+    'molfs': discharge.inputs.molar_composition,
+    'ks': ks
+  }
+
+  solver = Solver(
+    f=get_rachford_rice_sum,
+    args=args,
+    x0=0.5,
+    dx=0.01,
+    target=0,
+    tol=1e-10,
+    max_iter=100,
+    bisect_min_max=[0, 1],
+    f_increases_with_x=False
+  )
   
-  
-  
+  if not solver.solve():
+    raise ValueError("Rachford-Rice solver failed to converge.")
+
+  vf = solver.answer
+  zs = discharge.inputs.molar_composition
+  ks = np.array(ks)
+  xs = np.array(zs / (1 + vf * (ks - 1)))
+  ys = xs * ks
+  if ys.sum() != 0:
+    ys /= ys.sum()
+  return ys
+
 def get_rachford_rice_sum(vap_fract, args):
   molfs = args['molfs']
   ks = args['ks']
