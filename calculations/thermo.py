@@ -102,3 +102,53 @@ def get_vapor_pressures_pa(inputs, temp_k):
         vp_pa = dippr_eqn_101(di.equation_coefficients, temp_k)
         vps.append(vp_pa)
   return vps
+
+def get_threshold_concs(inputs, cheminfo, vapor_phase_composition):
+  # for mixtures of chemicals, get the threshold concentrations for each chemical in the mixture
+  # this uses the vapor phase composition and the toxicity limits from the cheminfo table
+  shi_idx = -1
+  max_shi = 0
+  lel_inv = 0
+  lel = 0
+  tox_values = {
+    1: None,
+    2: None,
+    3: None
+  }
+  for i in range(len(inputs.chem_mix)):
+    cas = inputs.chem_mix[i]
+    if cas in cheminfo['cas_id'].values:
+      erpg_3 = cheminfo.loc[cheminfo['cas_id'] == cas, 'erpg_3'].values[0]
+      if erpg_3 > 0 and erpg_3 < 1e6:
+        shi = vapor_phase_composition[i] / erpg_3
+        if shi > max_shi:
+          max_shi = shi
+          shi_idx = i
+      lel_comp = cheminfo.loc[cheminfo['cas_id'] == cas, 'lel'].values[0]
+      if lel_comp > 0 and lel < 1e6:
+        lel_inv += vapor_phase_composition[i] / lel_comp
+  
+  if shi_idx >= 0:
+    fract = vapor_phase_composition[shi_idx]
+    for i in range(3,0,-1):
+      tox_value = cheminfo.loc[cheminfo['cas_id'] == cas, f'erpg_{i}'].values[0]
+      if tox_value > 0 and tox_value < 1e6:
+        tox_values[i] = float(tox_value / fract)
+      if tox_values[i] is None and (i + 1) in tox_values and tox_values[i + 1] is not None:
+        # in some cases, an erpg_3 will be available while an erpg_2 is not.  In this case, we can use the erpg_3 value to calculate the erpg_2 value.
+        # the difference is estimated as a factor of 7.  
+        tox_values[i] = tox_values[i + 1] / 7
+        
+
+  if lel_inv > 0:
+    lel = 1 / lel_inv
+  
+  tox_keys_sorted = sorted(list(tox_values.keys()))
+
+
+  return {
+    'flammable': [0.25 * lel, 0.5 * lel, lel],
+    'toxic': [tox_values[k] for k in tox_keys_sorted],
+  }
+
+

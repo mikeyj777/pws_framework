@@ -22,7 +22,7 @@ class Main:
       return ResultCode.NO_DISCHARGE_RECORDS_ERROR
     vps = get_vapor_phase_composition(self.discharge_calc)
     # dispersion
-    apple = 1
+    
 
     # post-processing
 

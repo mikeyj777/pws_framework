@@ -4,3 +4,4 @@ class Exceptions:
   flash_calc_failed = "Flash Calc Failed"
   invalid_inputs = "Invalid Inputs Received in Model"
   discharge_calc_failure = "Vessel Leak Calculation Failed"
+  dispersion_calc_failed = "Dispersion Calculation Failed"
