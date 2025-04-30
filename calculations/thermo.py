@@ -56,7 +56,6 @@ def get_vapor_phase_composition(discharge):
     x0=0.5,
     dx=0.01,
     target=0,
-    tol=1e-10,
     max_iter=100,
     bisect_min_max=[0, 1],
     f_increases_with_x=False
