@@ -16,30 +16,35 @@ class Dispersion:
     self.vapor_phase_composition = vapor_phase_composition
     self.inputs = inputs
     self.vlc = discharge_data_vlc
-    self.threshold_concs = None
-    self.cheminfo = None
+    self.threshold_concs_ppm = None
+    self.cheminfo = pd.read_csv(Tables().cheminfo)
     self.weather = None
     self.substrate = None
     self.dispersion_calc = None
+    self.distsAndFootprintsCalc = None
+    self.post_process_results = {
+      "flammable": None,
+      "toxic": None,
+    }
   
-  def run(self):
+  def run(self) -> ResultCode:
     self.get_limits()
     self.get_entities()
     for hazard in ["flammable", "toxic"]:
-      if self.threshold_concs[hazard][0] is None or self.threshold_concs[hazard][0] == 0:
+      if self.threshold_concs_ppm[hazard][0] is None or self.threshold_concs_ppm[hazard][0] <= 0 or self.threshold_concs_ppm[hazard][-1] >= 1e6:
         continue
       disp_params = self.get_dispersion_parameters(hazard_type=hazard)
       self.run_dispersion_calculation(disp_params=disp_params, hazard_type=hazard)
       self.run_post_processing_calcs(hazard_type=hazard)
+    return ResultCode.SUCCESS
   
   def get_limits(self):
     # Get the flammable limits and toxicity limits from the vapor phase composition
-    concs_dict = get_threshold_concs(
+    self.threshold_concs_ppm = get_threshold_concs(
       inputs=self.inputs,
       cheminfo=self.cheminfo,
       vapor_phase_composition=self.vapor_phase_composition
     )
-    self.threshold_concs = concs_dict
 
   def get_entities(self):
     self.weather = weather()
@@ -68,7 +73,7 @@ class Dispersion:
     self.dispersion_calc.discharge_record_count = len(self.vlc.discharge_records)
     self.dispersion_calc.weather = self.weather
     self.dispersion_calc.dispersion_parameters = disp_params
-    self.dispersion_calc.end_point_concentration = self.threshold_concs[hazard_type][0]
+    self.dispersion_calc.end_point_concentration = self.threshold_concs_ppm[hazard_type][0] * 1e-6  # convert to vol fract
 
     if self.dispersion_calc.run() != ResultCode.SUCCESS:
       self.inputs.log_handler(f'\n\n\n***\n\n\nDispersion Calculation did not complete.  Messages:\n\n\n{self.dispersion_calc.messages}')
@@ -82,14 +87,16 @@ class Dispersion:
       dispersion_records = self.dispersion_calc.dispersion_records, 
       dispersion_record_count = len(self.dispersion_calc.dispersion_records), 
       substrate = self.dispersion_calc.substrate, 
-      dispersion_output_configs = None, dispersion_output_config_count = 0, 
-      dispersion_parameters = self.dispersion_calc.dispersion_parameters, material = self.dispersion_calc.material)
+      dispersion_output_configs = [], 
+      dispersion_output_config_count = 0, 
+      dispersion_parameters = self.dispersion_calc.dispersion_parameters, 
+      material = self.dispersion_calc.material)
     
     elevs_m = self.get_elevations()
-    concs = self.threshold_concs[hazard_type]
+    concs = self.threshold_concs_ppm[hazard_type]
     for elev in elevs_m:
       for conc in concs:
-        if conc is None or conc == 0:
+        if conc is None or conc == 0 or conc >= 1e6:
           continue
         c = conc * 1e-6  # convert to ppm
         disp_output_config = DispersionOutputConfig(resolution=Resolution.LOW, contour_type=ContourType.FOOTPRINT, elevation=elev, concentration=c, special_concentration=None)
@@ -100,6 +107,14 @@ class Dispersion:
       self.inputs.log_handler(f'\n\n\n***\n\n\nPost-processing calculation did not complete.  Messages:\n\n\n{self.distsAndFootprintsCalc.messages}')
       raise Exception(Exceptions.dispersion_calc_failed)
     
+    self.post_process_results[hazard_type] = {
+      'n_contour_points' : self.distsAndFootprintsCalc.n_contour_points,
+      'contour_points' : self.distsAndFootprintsCalc.contour_points,
+      'dispersion_output_configs' : self.distsAndFootprintsCalc.dispersion_output_configs,
+    }
+
+    apple = 1
+
   def get_elevations(self):
     # Get the elevations from the discharge data and the dispersion calculation
     h = self.inputs.elevation_m
@@ -109,3 +124,6 @@ class Dispersion:
     num_points_below_h = min(num_points_below_h, 20)
     elevs_m = np.linspace(0, h, num_points_below_h)
     elevs_m = np.append(elevs_m, h + np.linspace(3, 51, 17, endpoint=True))
+    elevs_m = list(set(elevs_m.tolist()))
+    elevs_m = sorted(elevs_m)
+    return elevs_m

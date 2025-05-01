@@ -11,15 +11,10 @@ def get_vapor_phase_composition(discharge):
 
   lf = fin_state.liquid_fraction
 
-  # debug xxx apple
-  lf = 0.3
 
   if lf == 0:
     return discharge.inputs.molar_composition
   temp_k = fin_state.temperature
-
-  # debug xxx apple
-  temp_k = 74+273.15
 
   vps = get_vapor_pressures_pa(inputs=discharge.inputs, temp_k=temp_k)
   ks = []
@@ -117,21 +112,21 @@ def get_threshold_concs(inputs, cheminfo, vapor_phase_composition):
   }
   for i in range(len(inputs.chem_mix)):
     cas = inputs.chem_mix[i]
-    if cas in cheminfo['cas_id'].values:
-      erpg_3 = cheminfo.loc[cheminfo['cas_id'] == cas, 'erpg_3'].values[0]
+    if cas in cheminfo['cas_no'].values:
+      erpg_3 = cheminfo.loc[cheminfo['cas_no'] == cas, 'erpg_3'].values[0]
       if erpg_3 > 0 and erpg_3 < 1e6:
-        shi = vapor_phase_composition[i] / erpg_3
+        shi = float(vapor_phase_composition[i] / erpg_3)
         if shi > max_shi:
           max_shi = shi
           shi_idx = i
-      lel_comp = cheminfo.loc[cheminfo['cas_id'] == cas, 'lel'].values[0]
+      lel_comp = cheminfo.loc[cheminfo['cas_no'] == cas, 'lel'].values[0]
       if lel_comp > 0 and lel < 1e6:
-        lel_inv += vapor_phase_composition[i] / lel_comp
+        lel_inv += float(vapor_phase_composition[i] / lel_comp)
   
   if shi_idx >= 0:
     fract = vapor_phase_composition[shi_idx]
     for i in range(3,0,-1):
-      tox_value = cheminfo.loc[cheminfo['cas_id'] == cas, f'erpg_{i}'].values[0]
+      tox_value = cheminfo.loc[cheminfo['cas_no'] == cas, f'erpg_{i}'].values[0]
       if tox_value > 0 and tox_value < 1e6:
         tox_values[i] = float(tox_value / fract)
       if tox_values[i] is None and (i + 1) in tox_values and tox_values[i + 1] is not None:

@@ -3,6 +3,7 @@ from pypws.enums import ResultCode
 from entities.inputs import Inputs
 from entities.vessel_leak import vessel_and_leak
 from calculations.discharge import Discharge
+from calculations.dispersion import Dispersion
 from calculations.thermo import get_vapor_phase_composition
 
 class Main:
@@ -22,7 +23,15 @@ class Main:
       return ResultCode.NO_DISCHARGE_RECORDS_ERROR
     vps = get_vapor_phase_composition(self.discharge_calc)
     # dispersion
+    self.dispersion_calc = Dispersion(
+      vapor_phase_composition=vps,
+      discharge_data_vlc=self.discharge_calc.vlc,
+      inputs=self.inputs
+    )
+    if self.dispersion_calc.run() != ResultCode.SUCCESS:
+      return ResultCode.DISPERSION_CALCULATION_INITIALIZATION_ERROR
     
+    apple = 1
 
     # post-processing
 
