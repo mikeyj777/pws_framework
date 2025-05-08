@@ -22,6 +22,10 @@ class Dispersion:
     self.substrate = None
     self.dispersion_calc = None
     self.distsAndFootprintsCalc = None
+    self.footprints_conc_elev_z_x_y_list = {
+      "flammable": [],
+      "toxic": [],
+    }
     self.footprints_conc_elev_z_x_y_df = {
       "flammable": {},
       "toxic": {},
@@ -113,7 +117,6 @@ class Dispersion:
   def parse_batch_call_footprints(self, hazard_type):
     dists_and_footprints_calc = self.distsAndFootprintsCalc
     curr_pt = 0
-    footprints_conc_elev_z_x_y_list = []
     curr_disp_output_config = -1
     for num_pts in dists_and_footprints_calc.n_contour_points:
       curr_disp_output_config += 1
@@ -124,7 +127,7 @@ class Dispersion:
       for cp in cps:
         if abs(cp.x) > 1e10:
           continue
-        footprints_conc_elev_z_x_y_list.append({
+        self.footprints_conc_elev_z_x_y_list[hazard_type].append({
           'conc_ppm': disp_output_config.concentration * 1e6,
           'elev_m': disp_output_config.elevation,
           'x': cp.x,
@@ -133,9 +136,9 @@ class Dispersion:
         })
       curr_pt += num_pts
     
-    if len(footprints_conc_elev_z_x_y_list) == 0:
+    if len(self.footprints_conc_elev_z_x_y_list[hazard_type]) == 0:
       return
-    self.footprints_conc_elev_z_x_y_df[hazard_type] = pd.DataFrame(footprints_conc_elev_z_x_y_list)
+    self.footprints_conc_elev_z_x_y_df[hazard_type] = pd.DataFrame(self.footprints_conc_elev_z_x_y_list[hazard_type])
     
 
   def get_elevations(self):

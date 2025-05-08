@@ -1,3 +1,5 @@
+import json
+
 from pypws.enums import ResultCode
 
 from modeling.main import Main
@@ -29,6 +31,9 @@ class Interface:
     self.main = Main()
     if self.main.run(app_inputs=self.inputs_dict) != ResultCode.SUCCESS:
       raise Exception(Exceptions.unspecified_error)
+    self.data_dict_of_dfs = self.main.data
+    self.data_dict_of_list_of_dicts = self.main.dispersion_calc.footprints_conc_elev_z_x_y_list
+    self.data = json.dumps(self.data_dict_of_list_of_dicts)
     return ResultCode.SUCCESS
     
 def tester():
@@ -43,7 +48,7 @@ def tester():
   interface.set_inputs(
     press_pa=(100+14.6959)/14.6959 * 101325,
     temp_k=73.15 + 273.15,
-    chem_mix=['67-56-1'],
+    chem_mix=['7782-50-5'],
     molar_composition=[1],
   )
 
