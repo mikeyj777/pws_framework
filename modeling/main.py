@@ -9,6 +9,7 @@ from calculations.thermo import get_vapor_phase_composition
 class Main:
   def __init__(self):
     self.inputs = None
+    self.data = None
 
   def run(self, app_inputs):
 # set inputs for model.  Also gets materials and state, stored as properties of "inputs"
@@ -31,8 +32,6 @@ class Main:
     if self.dispersion_calc.run() != ResultCode.SUCCESS:
       return ResultCode.DISPERSION_CALCULATION_INITIALIZATION_ERROR
     
-    apple = 1
+    self.data = self.dispersion_calc.footprints_conc_elev_z_x_y_df
 
-    # post-processing
-
-    # parse conc data
+    return ResultCode.SUCCESS

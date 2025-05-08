@@ -22,9 +22,9 @@ class Dispersion:
     self.substrate = None
     self.dispersion_calc = None
     self.distsAndFootprintsCalc = None
-    self.post_process_results = {
-      "flammable": None,
-      "toxic": None,
+    self.footprints_conc_elev_z_x_y_df = {
+      "flammable": {},
+      "toxic": {},
     }
   
   def run(self) -> ResultCode:
@@ -36,6 +36,7 @@ class Dispersion:
       disp_params = self.get_dispersion_parameters(hazard_type=hazard)
       self.run_dispersion_calculation(disp_params=disp_params, hazard_type=hazard)
       self.run_post_processing_calcs(hazard_type=hazard)
+      self.parse_batch_call_footprints(hazard_type=hazard)
     return ResultCode.SUCCESS
   
   def get_limits(self):
@@ -107,13 +108,35 @@ class Dispersion:
       self.inputs.log_handler(f'\n\n\n***\n\n\nPost-processing calculation did not complete.  Messages:\n\n\n{self.distsAndFootprintsCalc.messages}')
       raise Exception(Exceptions.dispersion_calc_failed)
     
-    self.post_process_results[hazard_type] = {
-      'n_contour_points' : self.distsAndFootprintsCalc.n_contour_points,
-      'contour_points' : self.distsAndFootprintsCalc.contour_points,
-      'dispersion_output_configs' : self.distsAndFootprintsCalc.dispersion_output_configs,
-    }
-
     apple = 1
+
+  def parse_batch_call_footprints(self, hazard_type):
+    dists_and_footprints_calc = self.distsAndFootprintsCalc
+    curr_pt = 0
+    footprints_conc_elev_z_x_y_list = []
+    curr_disp_output_config = -1
+    for num_pts in dists_and_footprints_calc.n_contour_points:
+      curr_disp_output_config += 1
+      disp_output_config = dists_and_footprints_calc.dispersion_output_configs[curr_disp_output_config]
+      if num_pts == 0:
+        continue
+      cps = dists_and_footprints_calc.contour_points[curr_pt:curr_pt + num_pts]
+      for cp in cps:
+        if abs(cp.x) > 1e10:
+          continue
+        footprints_conc_elev_z_x_y_list.append({
+          'conc_ppm': disp_output_config.concentration * 1e6,
+          'elev_m': disp_output_config.elevation,
+          'x': cp.x,
+          'y': cp.y,
+          'z': cp.z,
+        })
+      curr_pt += num_pts
+    
+    if len(footprints_conc_elev_z_x_y_list) == 0:
+      return
+    self.footprints_conc_elev_z_x_y_df[hazard_type] = pd.DataFrame(footprints_conc_elev_z_x_y_list)
+    
 
   def get_elevations(self):
     # Get the elevations from the discharge data and the dispersion calculation
