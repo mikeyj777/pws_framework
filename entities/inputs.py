@@ -17,7 +17,9 @@ class Inputs:
     self.get_properties()
 
   def clean_inputs(self):
-    molar_composition = np.array(self.molar_composition)
+    molar_composition = [float(x) for x in self.molar_composition]
+    molar_composition = np.array(molar_composition)
+    molar_composition 
     if molar_composition.sum() !=0:
       molar_composition /= molar_composition.sum()
     self.molar_composition = molar_composition.tolist()

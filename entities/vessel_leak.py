@@ -19,7 +19,7 @@ def vessel_and_leak(inputs):
   state = vessel_state_calc.output_state
   
   ll = get_liquid_level(results=inputs.flash_result)
-  vol = inputs.volume_m3
+  vol = inputs.volume_m3 / ll
   l_by_d = 1
   d = (4*vol / math.pi / l_by_d) ** (1/3)
   l = d * l_by_d
@@ -64,6 +64,7 @@ def get_liquid_level(results):
   ll = 0
   if liquid_volume_m3 + vapor_volume_m3 > 0:
     ll = liquid_volume_m3 / (liquid_volume_m3 + vapor_volume_m3)
+  ll = min(ll, 0.99)
   return ll
 
 

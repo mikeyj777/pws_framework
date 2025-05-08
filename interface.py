@@ -7,6 +7,7 @@ from data.exceptions import Exceptions
 class Interface:
   def __init__(self):
     self.inputs_dict = {}
+    self.main = None
 
   def set_inputs(self, press_pa = 2*101325, temp_k = 350, hole_size_m = 0.1, elevation_m = 0, release_angle_rad = 0, chem_mix = ['50-00-0'], molar_composition = [1], release_mass_kg = 100, release_volume_m3 = None, containment_area_m2 = None, log_handler = print):
     
@@ -25,20 +26,34 @@ class Interface:
 
   def run(self):
     
-    main = Main()
-    if main.run(app_inputs=self.inputs_dict) != ResultCode.SUCCESS:
+    self.main = Main()
+    if self.main.run(app_inputs=self.inputs_dict) != ResultCode.SUCCESS:
       raise Exception(Exceptions.unspecified_error)
+    return ResultCode.SUCCESS
     
-def main():
+def tester():
   interface = Interface()
+  # interface.set_inputs(
+  #   press_pa=(0.01+14.6959)/14.6959 * 101325,
+  #   temp_k=73.15 + 273.15,
+  #   chem_mix=['121-44-8', '67-56-1'],
+  #   molar_composition=[0.5, 0.5],
+  # )
+
   interface.set_inputs(
-    press_pa=(0.01+14.6959)/14.6959 * 101325,
+    press_pa=(100+14.6959)/14.6959 * 101325,
     temp_k=73.15 + 273.15,
-    chem_mix=['121-44-8', '67-56-1'],
-    molar_composition=[0.5, 0.5],
+    chem_mix=['67-56-1'],
+    molar_composition=[1],
   )
+
   res = interface.run()
+  if res != ResultCode.SUCCESS or interface.main.data is None:
+    raise Exception(Exceptions.dispersion_calc_failed)
+  
+  data = interface.main.data
+
   apple = 1
 
 if __name__ == '__main__':
-  main()
+  tester()
