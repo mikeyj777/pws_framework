@@ -32,8 +32,13 @@ class Interface:
     if self.main.run(app_inputs=self.inputs_dict) != ResultCode.SUCCESS:
       raise Exception(Exceptions.unspecified_error)
     self.data_dict_of_dfs = self.main.data
-    self.data_dict_of_list_of_dicts = self.main.dispersion_calc.footprints_conc_elev_z_x_y_list
-    self.data = json.dumps(self.data_dict_of_list_of_dicts)
+    self.footprint_dict_of_list_of_dicts = self.main.dispersion_calc.footprints_conc_elev_z_x_y_list
+    self.thresholds_concs_ppm_dict = self.main.dispersion_calc.threshold_concs_ppm
+    self.data_dict = {
+      'footprints': self.footprint_dict_of_list_of_dicts,
+      'thresholds_concs_ppm': self.thresholds_concs_ppm_dict,
+    }
+    self.data = json.dumps(self.data_dict)
     return ResultCode.SUCCESS
     
 def tester():
